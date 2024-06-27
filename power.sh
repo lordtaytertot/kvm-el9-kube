@@ -6,6 +6,5 @@ if [[ -z $1 || ( $1 != start && $1 != shutdown ) ]]; then
 fi
 
 for i in {1..3}; do
-  echo vm${i}
   sudo virsh ${1} --domain vm${i}
 done
