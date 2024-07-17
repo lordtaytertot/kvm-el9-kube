@@ -1,7 +1,7 @@
 #!/bin/env bash
 
 if [[ -z $1 || ( $1 != start && $1 != shutdown ) ]]; then
-  echo "usage: $0 ( start || shutdown )"
+  echo "usage: $0 [ start || shutdown ]"
   exit 1
 fi
 
