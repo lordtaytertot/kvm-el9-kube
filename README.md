@@ -83,3 +83,21 @@ sudo kubeadm join 192.168.1.61:6443 --token ... --discovery-token-ca-cert-hash .
 ./power.sh 
 usage: ./power.sh ( start || shutdown )
 ```
+
+## upgrade
+```bash
+# zeus ~/dev/ansible
+ansible vm -b -a 'sed -i "s/1\.30/1.31/" /etc/yum.repos.d/kubernetes.repo'
+ansible vm -b -a 'sudo dnf -y update --disableexcludes kubernetes'
+
+# vm1
+sudo kubeadm upgrade plan
+sudo kubeadm upgrade apply v1.31.0
+sudo systemctl daemon-reload
+sudo systemctl restart kubelet
+
+# zeus ~/dev/ansible
+ansible vm2,vm3 -b -a 'kubeadm upgrade node'
+ansible vm2,vm3 -b -a 'systemctl daemon-reload'
+ansible vm2,vm3 -b -a 'systemctl restart kubelet'
+```
