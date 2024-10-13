@@ -13,10 +13,10 @@ sudo sed -i '/swap/d' /etc/fstab
 cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
-baseurl=https://pkgs.k8s.io/core:/stable:/v1.30/rpm/
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/
 enabled=1
 gpgcheck=1
-gpgkey=https://pkgs.k8s.io/core:/stable:/v1.30/rpm/repodata/repomd.xml.key
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/repodata/repomd.xml.key
 exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
 EOF
 
@@ -87,12 +87,11 @@ usage: ./power.sh ( start || shutdown )
 ## upgrade
 ```bash
 # zeus ~/dev/ansible
-ansible vm -b -a 'sed -i "s/1\.30/1.31/" /etc/yum.repos.d/kubernetes.repo'
 ansible vm -b -a 'sudo dnf -y update --disableexcludes kubernetes'
 
 # vm1
 sudo kubeadm upgrade plan
-sudo kubeadm upgrade apply v1.31.0
+sudo kubeadm upgrade apply v1.31.1
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
 
