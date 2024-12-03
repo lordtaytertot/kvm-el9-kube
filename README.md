@@ -87,7 +87,7 @@ usage: ./power.sh ( start || shutdown )
 ## upgrade
 ```bash
 # zeus ~/dev/ansible
-ansible vm -b -a 'sudo dnf -y update --disableexcludes kubernetes'
+ansible vm -b -a 'sudo dnf -y update'
 
 # vm1
 sudo kubeadm upgrade plan
