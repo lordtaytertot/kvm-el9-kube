@@ -13,10 +13,10 @@ sudo sed -i '/swap/d' /etc/fstab
 cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
-baseurl=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.32/rpm/
 enabled=1
 gpgcheck=1
-gpgkey=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/repodata/repomd.xml.key
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.32/rpm/repodata/repomd.xml.key
 exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
 EOF
 
@@ -24,8 +24,9 @@ cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
 net.ipv4.ip_forward = 1
 EOF
 
+PIN=1.32.0
 sudo dnf -y update
-sudo dnf -y install kubelet kubeadm kubectl vim yum-utils --disableexcludes=kubernetes
+sudo dnf -y install kubelet-${PIN} kubeadm-${PIN} kubectl-${PIN} vim yum-utils --disableexcludes=kubernetes
 sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 sudo dnf -y install containerd
 
@@ -35,17 +36,25 @@ sudo systemctl enable kubelet
 
 containerd config default | sudo tee /etc/containerd/config.toml
 sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+rm ~/.bash_history
+history -c
 sudo poweroff
 ```
 
 clone to vm2 and vm3, modifying MAC addresses, increasing CPU and memory, and attaching 100 GiB drives
 
 ```bash
+# on zeus
+sudo virsh snapshot-create-as vm1 base --disk-only
+sudo virsh snapshot-create-as vm2 base --disk-only
+sudo virsh snapshot-create-as vm3 base --disk-only
+
+./power.sh start
+
 # on vm1
 sudo kubeadm init --apiserver-advertise-address 192.168.1.61 --pod-network-cidr "10.42.0.0/16"
-
 # https://docs.tigera.io/calico/latest/getting-started/kubernetes/self-managed-onprem/onpremises#install-calico
-kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.2/manifests/tigera-operator.yaml
 curl https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/custom-resources.yaml -O
 sed -i 's/192.168.0.0/10.42.0.0/' custom-resources.yaml
 kubectl create -f custom-resources.yaml
@@ -74,7 +83,7 @@ sudo kubeadm join 192.168.1.61:6443 --token ... --discovery-token-ca-cert-hash .
 ```
 
 ```bash
-# from kubectl client
+# from zeus
 ./setup-storage.sh
 ```
 
@@ -96,6 +105,8 @@ sudo systemctl daemon-reload
 sudo systemctl restart kubelet
 
 # zeus ~/dev/ansible
+ansible vm -b -a "sed -i 's/1\.31/1\.32/' /etc/yum.repos.d/kubernetes.repo"
+ansible vm -b -a "dnf update -y --disableexcludes=kubernetes kubeadm-1.32.0 kubelet-1.32.0 kubectl-1.32.0"
 ansible vm2,vm3 -b -a 'kubeadm upgrade node'
 ansible vm2,vm3 -b -a 'systemctl daemon-reload'
 ansible vm2,vm3 -b -a 'systemctl restart kubelet'
